@@ -1,27 +1,27 @@
 <?php
-
 namespace App\DataFixtures;
 
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
 use App\Entity\Category;
-use Faker\Factory;
+use App\Entity\Notification;
 use App\Entity\User;
+use App\Entity\Note;
+use App\Entity\Network;
+use App\Entity\Like;
 use Symfony\Component\String\Slugger\SluggerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Faker\Factory;
 
 class AppFixtures extends Fixture
 {
-    private $slug = null;
-    private $hash = null;
+    private $slugger;
+    private $hasher;
 
-    public function __construct(
-        private SluggerInterface $slugger,
-        private UserPasswordHasherInterface $hasher
-        )
+    public function __construct(SluggerInterface $slugger, UserPasswordHasherInterface $hasher)
     {
-        $this->slug = $slugger;
-        $this->hash = $hasher;
+        $this->slugger = $slugger;
+        $this->hasher = $hasher;
     }
     
     public function load(ObjectManager $manager): void
@@ -29,7 +29,6 @@ class AppFixtures extends Fixture
         $faker = Factory::create('fr_FR');
         
         // Création des catégories
-        # Tableau contenant les catégories
         $categories = [
             'HTML' => 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-plain.svg',
             'CSS' => 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-plain.svg',
@@ -46,22 +45,74 @@ class AppFixtures extends Fixture
             'Java' => 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original-wordmark.svg',
         ];
 
+        $categoryArray = [];
+
         foreach ($categories as $title => $icon) {
-            $category = new Category(); // Nouvel objet Category
-            $category->setTitle($title); // Ajout du titre
-            $category->setIcon($icon); // Ajout de l'icône
-            $manager->persist($category); // Persiste l'objet
+            $category = new Category();
+            $category->setTitle($title);
+            $category->setIcon($icon);
+            array_push($categoryArray, $category);
+            $manager->persist($category);
         }
 
         // 10 utilisateurs
+        $users = [];
         for ($i = 0; $i < 10; $i++) {
-            $username = $faker->userName(); // Génère un username aléatoire
-            $usernameFinal = $this->slug->slug($username); // Username en slug
-            $user = new User(); // Nouvel objet User
-            $user->setEmail($usernameFinal . $faker->freeEmailDomain); // Ajout de l'email
-            $user->setUsername($faker->userName()); // Ajout du nom d'utilisateur
-            $user->setPassword($this->hash->hashPassword($user, 'admin')); // Ajout du mot de passe
-            $user->setRoles(['ROLE_USER']); // Ajout du rôle
+            $username = $faker->userName();
+            $usernameFinal = $this->slugger->slug($username);
+            $user = new User();
+            $user->setEmail($usernameFinal . '@' . $faker->freeEmailDomain);
+            $user->setUsername($username);
+            $user->setPassword($this->hasher->hashPassword($user, 'admin'));
+            $user->setRoles(['ROLE_USER']);
+            $user->setCreatedAt(new \DateTimeImmutable());
+            $user->setUpdatedAt(new \DateTimeImmutable());
+            $manager->persist($user);
+            array_push($users, $user);
+        }
+
+        $notes = [];
+        for ($j = 0; $j < 10; $j++) {
+            $note = new Note();
+            $note->setTitle($faker->sentence());
+            $note->setSlug($this->slugger->slug($note->getTitle()));
+            $note->setContent($faker->paragraph(4, true));
+            $note->setPublic($faker->boolean(50));
+            $note->setViews((string)$faker->numberBetween(100, 1000));
+            $note->setCreator($faker->randomElement($users));
+            $note->setCategory($faker->randomElement($categoryArray));
+            $note->setCreatedAt(new \DateTimeImmutable());
+            $note->setUpdatedAt(new \DateTimeImmutable());
+            $manager->persist($note);
+            $notes[] = $note;
+
+
+            for ($k = 0; $k < $faker->numberBetween(1, 3); $k++) {
+                $notification = new Notification();
+                $notification->setTitle($faker->sentence());
+                $notification->setContent($faker->paragraph());
+                $notification->setType($faker->randomElement(['info', 'warning', 'error']));
+                $notification->setArchived($faker->boolean(20));
+                $notification->setNote($note);
+                $notification->setUpdatedAt(new \DateTimeImmutable());
+                $manager->persist($notification);
+            }
+        }
+
+        for ($l = 0; $l < 5; $l++) {
+            $network = new Network();
+            $network->setName($faker->company);
+            $network->setUrl($faker->url);
+            $network->setCreator((string)$faker->randomElement($users)->getId());
+            $manager->persist($network);
+        }
+
+
+        for ($m = 0; $m < 20; $m++) {
+            $like = new Like();
+            $like->setNote((string)$faker->randomElement($notes)->getId());
+            $like->setCreator((string)$faker->randomElement($users)->getId());
+            $manager->persist($like);
         }
 
         $manager->flush();

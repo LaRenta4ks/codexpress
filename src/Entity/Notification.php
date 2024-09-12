@@ -47,7 +47,7 @@ class Notification
     } 
     public function __construct()
     {
-     $this->type = info;
+     //$this->type = info;
      $this->archived = false; //initialisation de l'état archivé à false
     }
     public function getId(): ?int

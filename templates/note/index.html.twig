@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello NoteController!{% endblock %}
+
+{% block body %}
+<header>
+<h1 class="text-5xl text-green-500">Homepage</h1>
+<p>fqscsdfqfqsdfg</p>
+</header>
+<div>
+<h3>lorem ipsum dolot</h3>
+<p>il y a actuellement {{lastNotes}} notes public</p>
+<div>
+</div>
+{{item.title}}
+{{item.category.title}}
+<a href="{{path('app_note_show', {'slug': itetm.slug})}}">check it</a>
+</div>
+{{dump(lastNotes)}}
+{% endblock %}
