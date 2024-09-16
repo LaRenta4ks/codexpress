@@ -93,12 +93,12 @@ class Note
         return $this->slug;
     }
 
-    public function setSlug(?string $slug): static
-    {
-        $this->slug = $slug;
+public function setSlug(string $slug): static
+{
+	$this->slug = $slug;
 
-        return $this;
-    }
+	return $this;
+}
 
     public function getContent(): ?string
     {
@@ -212,5 +212,32 @@ class Note
         $this->creator = $creator;
 
         return $this;
-    }
+    }public function getLikes(): Collection
+{
+    return $this->likes;
 }
+
+public function addLike(Like $like): static
+{
+    if (!$this->likes->contains($like)) {
+        $this->likes->add($like);
+        $like->setNote($this);
+    }
+
+    return $this;
+}
+
+public function removeLike(Like $like): static
+{
+    if ($this->likes->removeElement($like)) {
+        // set the owning side to null (unless already changed)
+        if ($like->getNote() === $this) {
+            $like->setNote(null);
+        }
+    }
+
+    return $this;
+}
+
+}
+

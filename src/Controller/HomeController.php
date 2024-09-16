@@ -12,13 +12,13 @@ class HomeController extends AbstractController
     #[Route('/', name: 'app_home', methods: ['GET'])]
     public function index(NoteRepository $nr): Response
     {
-        $lastNotes = $nr->findBy([
-            'is_public' => true], // on filtre les notes qui sont publiques
-            ['created_at' => 'DESC'], // on trie les notes par date de création
-            6 // on affiche 6 notes
-        );
+        //Si public oui, Trie par date de création, Limite 6
+        $lastNotes = $nr->findBy(['is_public' => true], ['created_at' => 'DESC'], 6);
+        $totalNotes = $nr->findBy(['is_public' => true]);
+
         return $this->render('home/index.html.twig', [
-            'lastNotes' => $lastNotes, // on passe les notes à la vue Twig
+            'totalNotes' => count($totalNotes),
+            'lastNotes' => $lastNotes
         ]);
     }
 }
