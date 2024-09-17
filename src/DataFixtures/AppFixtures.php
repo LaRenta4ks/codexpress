@@ -2,34 +2,33 @@
 
 namespace App\DataFixtures;
 
-use Doctrine\Bundle\FixturesBundle\Fixture;
-use Doctrine\Persistence\ObjectManager;
-use App\Entity\Category;
-use App\Entity\Notification;
-use App\Entity\User;
-use App\Entity\Note;
-use App\Entity\Network;
-use App\Entity\Like;
-use Symfony\Component\String\Slugger\SluggerInterface;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Faker\Factory;
+use App\Entity\User;
+use App\Entity\Category;
+use App\Entity\Note;
+use Doctrine\Persistence\ObjectManager;
+use Doctrine\Bundle\FixturesBundle\Fixture;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\String\Slugger\SluggerInterface;
 
 class AppFixtures extends Fixture
 {
-    private $slugger;
-    private $hasher;
+    private $slug = null;
+    private $hash = null;
 
-    public function __construct(SluggerInterface $slugger, UserPasswordHasherInterface $hasher)
-    {
-        $this->slugger = $slugger;
-        $this->hasher = $hasher;
+    public function __construct(
+        private SluggerInterface $slugger,
+        private UserPasswordHasherInterface $hasher
+    ) {
+        $this->slug = $slugger;
+        $this->hash = $hasher;
     }
-    
+
     public function load(ObjectManager $manager): void
     {
         $faker = Factory::create('fr_FR');
-        
-        // Création des catégories
+
+        // Création de catégories
         $categories = [
             'HTML' => 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-plain.svg',
             'CSS' => 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-plain.svg',
@@ -46,74 +45,54 @@ class AppFixtures extends Fixture
             'Java' => 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/java/java-original-wordmark.svg',
         ];
 
-        $categoryArray = [];
+        $categoryArray = []; // Ce tableau nous servira pour conserver les objets Category
 
         foreach ($categories as $title => $icon) {
-            $category = new Category();
-            $category->setTitle($title);
-            $category->setIcon($icon);
-            array_push($categoryArray, $category);
+            $category = new Category(); // Nouvel objet Category
+            $category
+                ->setTitle($title) // Ajoute le titre
+                ->setIcon($icon) // Ajoute l'icone
+            ;
+
+            array_push($categoryArray, $category); // Ajout de l'objet
             $manager->persist($category);
         }
+        // Admin
+            $user =  new User();
+            $user
+                ->setEmail('hello@codexpress.fr')
+                ->setUsername('Jensone')
+                ->setPassword($this->hash->hashPassword($user, 'admin'))
+                ->setRoles(['ROLE_ADMIN'])
+                ;
+            $manager->persist($user);
 
         // 10 utilisateurs
-        $users = [];
         for ($i = 0; $i < 10; $i++) {
-            $username = $faker->userName();
-            $usernameFinal = $this->slugger->slug($username);
-            $user = new User();
-            $user->setEmail($usernameFinal . '@' . $faker->freeEmailDomain);
-            $user->setUsername($username);
-            $user->setPassword($this->hasher->hashPassword($user, 'admin'));
-            $user->setRoles(['ROLE_USER']);
-            $user->setCreatedAt(new \DateTimeImmutable());
-            $user->setUpdatedAt(new \DateTimeImmutable());
+            $username = $faker->userName; // Génére un username aléatoire
+            $usernameFinal = $this->slug->slug($username); // Username en slug
+            $user =  new User();
+            $user
+                ->setEmail($usernameFinal . '@' . $faker->freeEmailDomain)
+                ->setUsername($username)
+                ->setPassword($this->hash->hashPassword($user, 'admin'))
+                ->setRoles(['ROLE_USER'])
+                ;
             $manager->persist($user);
-            array_push($users, $user);
-        }
 
-        $notes = [];
-        for ($j = 0; $j < 10; $j++) {
-            $note = new Note();
-            $note->setTitle($faker->sentence());
-            $note->setSlug($this->slugger->slug($note->getTitle()));
-            $note->setContent($faker->paragraph(4, true));
-            $note->setPublic($faker->boolean(50));
-            $note->setViews((string)$faker->numberBetween(100, 1000));
-            $note->setCreator($faker->randomElement($users));
-            $note->setCategory($faker->randomElement($categoryArray));
-            $note->setCreatedAt(new \DateTimeImmutable());
-            $note->setUpdatedAt(new \DateTimeImmutable());
-            $manager->persist($note);
-            $notes[] = $note;
-
-
-            for ($k = 0; $k < $faker->numberBetween(1, 3); $k++) {
-                $notification = new Notification();
-                $notification->setTitle($faker->sentence());
-                $notification->setContent($faker->paragraph());
-                $notification->setType($faker->randomElement(['info', 'warning', 'error']));
-                $notification->setArchived($faker->boolean(20));
-                $notification->setNote($note);
-                $notification->setUpdatedAt(new \DateTimeImmutable());
-                $manager->persist($notification);
+            for ($j=0; $j < 10; $j++) { 
+                $note = new Note();
+                $note
+                    ->setTitle($faker->sentence())
+                    ->setSlug($this->slug->slug($note->getTitle()))
+                    ->setContent($faker->paragraphs(4, true))
+                    ->setPublic($faker->boolean(50))
+                    ->setViews($faker->numberBetween(100, 10000))
+                    ->setCreator($user)
+                    ->setCategory($faker->randomElement($categoryArray))
+                    ;
+                $manager->persist($note);
             }
-        }
-
-        for ($l = 0; $l < 5; $l++) {
-            $network = new Network();
-            $network->setName($faker->company);
-            $network->setUrl($faker->url);
-            $network->setCreator((string)$faker->randomElement($users)->getId());
-            $manager->persist($network);
-        }
-
-
-        for ($m = 0; $m < 20; $m++) {
-            $like = new Like();
-            $like->setNote((string)$faker->randomElement($notes)->getId());
-            $like->setCreator((string)$faker->randomElement($users)->getId());
-            $manager->persist($like);
         }
 
         $manager->flush();

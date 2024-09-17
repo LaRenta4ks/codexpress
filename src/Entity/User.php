@@ -13,6 +13,7 @@ use Symfony\Component\Security\Core\User\UserInterface;
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
+#[ORM\HasLifecycleCallbacks]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -42,7 +43,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @var Collection<int, Note>
      */
-    #[ORM\OneToMany(targetEntity: Note::class, mappedBy: 'creator')]
+    #[ORM\OneToMany(targetEntity: Note::class, mappedBy: 'creator', orphanRemoval: true)]
     private Collection $notes;
 
     #[ORM\Column]
@@ -51,11 +52,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?\DateTimeImmutable $updated_at = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $image = null;
-
     #[ORM\Column]
     private bool $isVerified = false;
+
+    /**
+    * @var Collection<int, Network>
+    */
+    #[ORM\OneToMany(targetEntity: Network::class, mappedBy: 'creator', orphanRemoval: true)]
+    private Collection $networks;
 
     public function __construct()
     {
@@ -73,7 +77,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUpdatedAtValue(): void
     {
         $this->updated_at = new \DateTimeImmutable();
-    } 
+    }
+
 
     public function getId(): ?int
     {
@@ -216,18 +221,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getImage(): ?string
-    {
-        return $this->image;
-    }
-
-    public function setImage(?string $image): static
-    {
-        $this->image = $image;
-
-        return $this;
-    }
-
     public function isVerified(): bool
     {
         return $this->isVerified;
@@ -236,6 +229,36 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVerified(bool $isVerified): static
     {
         $this->isVerified = $isVerified;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Network>
+     */
+    public function getNetworks(): Collection
+    {
+        return $this->networks;
+    }
+
+    public function addNetwork(Network $network): static
+    {
+        if (!$this->networks->contains($network)) {
+            $this->networks->add($network);
+            $network->setCreator($this);
+        }
+
+        return $this;
+    }
+
+    public function removeNetwork(Network $network): static
+    {
+        if ($this->networks->removeElement($network)) {
+            // set the owning side to null (unless already changed)
+            if ($network->getCreator() === $this) {
+                $network->setCreator(null);
+            }
+        }
 
         return $this;
     }

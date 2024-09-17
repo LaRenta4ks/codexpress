@@ -3,7 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\NetworkRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: NetworkRepository::class)]
@@ -14,14 +13,15 @@ class Network
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 80)]
     private ?string $name = null;
 
     #[ORM\Column(length: 255)]
     private ?string $url = null;
 
-    #[ORM\Column(type: Types::BIGINT)]
-    private ?string $creator = null;
+    #[ORM\ManyToOne(inversedBy: 'networks')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $creator = null;
 
     public function getId(): ?int
     {
@@ -52,12 +52,12 @@ class Network
         return $this;
     }
 
-    public function getCreator(): ?string
+    public function getCreator(): ?User
     {
         return $this->creator;
     }
 
-    public function setCreator(string $creator): static
+    public function setCreator(?User $creator): static
     {
         $this->creator = $creator;
 

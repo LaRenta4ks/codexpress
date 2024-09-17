@@ -1,18 +1,11 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}add a new note{% endblock %}
-
-{% block javascript %}
-{{ parent() }}
-<script src=""></script>
+{% block title %}
+	Add a new note
 {% endblock %}
 
 {% block body %}
-<tynimce-editor
-api-key="no-api-key"
-height="500"
-menubar="false"
-plugins="advList autolink lists image charmap preview anchor searchreplace visualblopcks code fullscreen insertdatetime media table code help wordcount"
-toolbar"undo redo | blocks | bold italic backcolor | alignleft alignright aligncenter alignright aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | help"
-
-  {% endblock %}
+    {% if app.user is defined %}
+    {{ form(noteForm) }}
+    {% endif %}
+{% endblock %}

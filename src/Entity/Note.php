@@ -9,6 +9,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: NoteRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Note
 {
     #[ORM\Id]
@@ -16,10 +17,10 @@ class Note
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 80, nullable: true)]
+    #[ORM\Column(length: 80)]
     private ?string $title = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 255)]
     private ?string $slug = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -53,9 +54,10 @@ class Note
 
     public function __construct()
     {
-        $this->notifications = new ArrayCollection(); //initialisation du tableau de notifications
-        $this->is_public = false; //initialisation du boolean a false
-        $this->title = uniqid('note-'); // initialisation du titre du GUID
+        $this->notifications = new ArrayCollection(); // initialisation du tableau de notifications
+        $this->is_public = false; // initialisation du booléen à false
+        $this->title = uniqid('note-'); // initialisation du titre au GUID
+        $this->views = 0; // initialisation du compteur de vues
     }
 
     #[ORM\PrePersist]
@@ -81,7 +83,7 @@ class Note
         return $this->title;
     }
 
-    public function setTitle(?string $title): static
+    public function setTitle(string $title): static
     {
         $this->title = $title;
 
@@ -93,12 +95,12 @@ class Note
         return $this->slug;
     }
 
-public function setSlug(string $slug): static
-{
-	$this->slug = $slug;
+    public function setSlug(string $slug): static
+    {
+        $this->slug = $slug;
 
-	return $this;
-}
+        return $this;
+    }
 
     public function getContent(): ?string
     {
@@ -212,32 +214,5 @@ public function setSlug(string $slug): static
         $this->creator = $creator;
 
         return $this;
-    }public function getLikes(): Collection
-{
-    return $this->likes;
-}
-
-public function addLike(Like $like): static
-{
-    if (!$this->likes->contains($like)) {
-        $this->likes->add($like);
-        $like->setNote($this);
     }
-
-    return $this;
 }
-
-public function removeLike(Like $like): static
-{
-    if ($this->likes->removeElement($like)) {
-        // set the owning side to null (unless already changed)
-        if ($like->getNote() === $this) {
-            $like->setNote(null);
-        }
-    }
-
-    return $this;
-}
-
-}
-
