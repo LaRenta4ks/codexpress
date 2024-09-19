@@ -2,39 +2,39 @@
 
 namespace App\Repository;
 
-use App\Entity\Network;
+use App\Entity\View;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
- * @extends ServiceEntityRepository<Network>
+ * @extends ServiceEntityRepository<View>
  */
-class NetworkRepository extends ServiceEntityRepository
+class ViewRepository extends ServiceEntityRepository
 {
     public function __construct(ManagerRegistry $registry)
     {
-        parent::__construct($registry, Network::class);
+        parent::__construct($registry, View::class);
     }
 
     //    /**
-    //     * @return Network[] Returns an array of Network objects
+    //     * @return View[] Returns an array of View objects
     //     */
     //    public function findByExampleField($value): array
     //    {
-    //        return $this->createQueryBuilder('n')
-    //            ->andWhere('n.exampleField = :val')
+    //        return $this->createQueryBuilder('v')
+    //            ->andWhere('v.exampleField = :val')
     //            ->setParameter('val', $value)
-    //            ->orderBy('n.id', 'ASC')
+    //            ->orderBy('v.id', 'ASC')
     //            ->setMaxResults(10)
     //            ->getQuery()
     //            ->getResult()
     //        ;
     //    }
 
-    //    public function findOneBySomeField($value): ?Network
+    //    public function findOneBySomeField($value): ?View
     //    {
-    //        return $this->createQueryBuilder('n')
-    //            ->andWhere('n.exampleField = :val')
+    //        return $this->createQueryBuilder('v')
+    //            ->andWhere('v.exampleField = :val')
     //            ->setParameter('val', $value)
     //            ->getQuery()
     //            ->getOneOrNullResult()

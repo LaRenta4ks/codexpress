@@ -11,9 +11,9 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 #[ORM\Table(name: '`user`')]
 #[ORM\UniqueConstraint(name: 'UNIQ_IDENTIFIER_EMAIL', fields: ['email'])]
-#[ORM\HasLifecycleCallbacks]
 #[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -37,13 +37,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?string $password = null;
 
-    #[ORM\Column(length: 120)]
-    private ?string $username = null;
+    #[ORM\Column(length: 180, unique: true)]
+	private ?string $username = null;
 
     /**
      * @var Collection<int, Note>
      */
-    #[ORM\OneToMany(targetEntity: Note::class, mappedBy: 'creator', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Note::class, mappedBy: 'author', orphanRemoval: true)]
     private Collection $notes;
 
     #[ORM\Column]
@@ -52,20 +52,30 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?\DateTimeImmutable $updated_at = null;
 
-    #[ORM\Column]
-    private bool $isVerified = false;
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $image = null;
 
     /**
-    * @var Collection<int, Network>
-    */
+     * @var Collection<int, Like>
+     */
+    #[ORM\OneToMany(targetEntity: Like::class, mappedBy: 'creator')]
+    private Collection $likes;
+
+    /**
+     * @var Collection<int, Network>
+     */
     #[ORM\OneToMany(targetEntity: Network::class, mappedBy: 'creator', orphanRemoval: true)]
     private Collection $networks;
+
+    #[ORM\Column]
+    private bool $isVerified = false;
 
     public function __construct()
     {
         $this->notes = new ArrayCollection();
+        $this->likes = new ArrayCollection();
+        $this->networks = new ArrayCollection();
     }
-
     #[ORM\PrePersist]
     public function setCreatedAtValue(): void
     {
@@ -78,8 +88,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         $this->updated_at = new \DateTimeImmutable();
     }
-
-
     public function getId(): ?int
     {
         return $this->id;
@@ -179,7 +187,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if (!$this->notes->contains($note)) {
             $this->notes->add($note);
-            $note->setCreator($this);
+            $note->setAuthor($this);
         }
 
         return $this;
@@ -189,8 +197,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         if ($this->notes->removeElement($note)) {
             // set the owning side to null (unless already changed)
-            if ($note->getCreator() === $this) {
-                $note->setCreator(null);
+            if ($note->getAuthor() === $this) {
+                $note->setAuthor(null);
             }
         }
 
@@ -221,14 +229,44 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function isVerified(): bool
+    public function getImage(): ?string
     {
-        return $this->isVerified;
+        return $this->image;
     }
 
-    public function setVerified(bool $isVerified): static
+    public function setImage(?string $image): static
     {
-        $this->isVerified = $isVerified;
+        $this->image = $image;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Like>
+     */
+    public function getLikes(): Collection
+    {
+        return $this->likes;
+    }
+
+    public function addLike(Like $like): static
+    {
+        if (!$this->likes->contains($like)) {
+            $this->likes->add($like);
+            $like->setCreator($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLike(Like $like): static
+    {
+        if ($this->likes->removeElement($like)) {
+            // set the owning side to null (unless already changed)
+            if ($like->getCreator() === $this) {
+                $like->setCreator(null);
+            }
+        }
 
         return $this;
     }
@@ -259,6 +297,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
                 $network->setCreator(null);
             }
         }
+
+        return $this;
+    }
+
+    public function isVerified(): bool
+    {
+        return $this->isVerified;
+    }
+
+    public function setVerified(bool $isVerified): static
+    {
+        $this->isVerified = $isVerified;
 
         return $this;
     }

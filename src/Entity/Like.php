@@ -3,7 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\LikeRepository;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: LikeRepository::class)]
@@ -15,35 +14,35 @@ class Like
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(type: Types::BIGINT)]
-    private ?string $note = null;
+    #[ORM\ManyToOne(inversedBy: 'likes')]
+    private ?Note $note = null;
 
-    #[ORM\Column(type: Types::BIGINT)]
-    private ?string $creator = null;
+    #[ORM\ManyToOne(inversedBy: 'likes')]
+    private ?User $creator = null;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getNote(): ?string
+    public function getNote(): ?Note
     {
         return $this->note;
     }
 
-    public function setNote(string $note): static
+    public function setNote(?Note $note): static
     {
         $this->note = $note;
 
         return $this;
     }
 
-    public function getCreator(): ?string
+    public function getCreator(): ?User
     {
         return $this->creator;
     }
 
-    public function setCreator(string $creator): static
+    public function setCreator(?User $creator): static
     {
         $this->creator = $creator;
 

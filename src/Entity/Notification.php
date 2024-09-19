@@ -7,6 +7,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: NotificationRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Notification
 {
     #[ORM\Id]
@@ -14,7 +15,7 @@ class Notification
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 120)]
+    #[ORM\Column(length: 80)]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
@@ -24,14 +25,25 @@ class Notification
     private ?string $type = null;
 
     #[ORM\Column]
-    private ?bool $archived = null;
+    private ?bool $is_archive = null;
+
+    #[ORM\Column]
+    private ?\DateTimeImmutable $created_at = null;
+
+    #[ORM\Column]
+    private ?\DateTimeImmutable $updated_at = null;
 
     #[ORM\ManyToOne(inversedBy: 'notifications')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Note $note = null;
 
-    #[ORM\Column]
-    private ?\DateTimeImmutable $updated_at = null;
+
+    public function __construct()
+    {
+        $this->type = "info"; //
+        $this->is_archive = false; //
+    }
+
 
     #[ORM\PrePersist]
     public function setCreatedAtValue(): void
@@ -44,12 +56,8 @@ class Notification
     public function setUpdatedAtValue(): void
     {
         $this->updated_at = new \DateTimeImmutable();
-    } 
-    public function __construct()
-    {
-     //$this->type = info;
-     $this->archived = false; //initialisation de l'état archivé à false
     }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -91,26 +99,26 @@ class Notification
         return $this;
     }
 
-    public function isArchived(): ?bool
+    public function archive(): ?bool
     {
-        return $this->archived;
+        return $this->is_archive;
     }
 
-    public function setArchived(bool $archived): static
+    public function setArchive(bool $is_archive): static
     {
-        $this->archived = $archived;
+        $this->is_archive = $is_archive;
 
         return $this;
     }
 
-    public function getNote(): ?Note
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
-        return $this->note;
+        return $this->created_at;
     }
 
-    public function setNote(?Note $note): static
+    public function setCreatedAt(\DateTimeImmutable $created_at): static
     {
-        $this->note = $note;
+        $this->created_at = $created_at;
 
         return $this;
     }
@@ -123,6 +131,18 @@ class Notification
     public function setUpdatedAt(\DateTimeImmutable $updated_at): static
     {
         $this->updated_at = $updated_at;
+
+        return $this;
+    }
+
+    public function getNote(): ?Note
+    {
+        return $this->note;
+    }
+
+    public function setNote(?Note $note): static
+    {
+        $this->note = $note;
 
         return $this;
     }

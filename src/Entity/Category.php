@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\CategoryRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use App\Entity\Notes;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
@@ -21,16 +22,13 @@ class Category
     #[ORM\Column(length: 255)]
     private ?string $icon = null;
 
-    /**
-     * @var Collection<int, Note>
-     */
     #[ORM\OneToMany(targetEntity: Note::class, mappedBy: 'category')]
     private Collection $notes;
 
     public function __construct()
     {
+        $this->icon = "icon-default.png";
         $this->notes = new ArrayCollection();
-        $this->icon = 'icon-default.png'; //initialisation de l'icone par défaut à un dossier
     }
 
     public function getId(): ?int
@@ -74,7 +72,7 @@ class Category
     {
         if (!$this->notes->contains($note)) {
             $this->notes->add($note);
-            $note->setCategory($this);
+            $note->addCategory($this);
         }
 
         return $this;
@@ -83,10 +81,7 @@ class Category
     public function removeNote(Note $note): static
     {
         if ($this->notes->removeElement($note)) {
-            // set the owning side to null (unless already changed)
-            if ($note->getCategory() === $this) {
-                $note->setCategory(null);
-            }
+            $note->removeCategory($this);
         }
 
         return $this;

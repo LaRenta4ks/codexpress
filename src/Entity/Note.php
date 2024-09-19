@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\NoteRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use App\Entity\Category;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -20,17 +21,13 @@ class Note
     #[ORM\Column(length: 80)]
     private ?string $title = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $slug = null;
+
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $content = null;
 
     #[ORM\Column]
     private ?bool $is_public = null;
-
-    #[ORM\Column(type: Types::BIGINT)]
-    private ?string $views = null;
 
     #[ORM\Column]
     private ?\DateTimeImmutable $created_at = null;
@@ -44,7 +41,10 @@ class Note
     #[ORM\OneToMany(targetEntity: Notification::class, mappedBy: 'note', orphanRemoval: true)]
     private Collection $notifications;
 
-    #[ORM\ManyToOne(inversedBy: 'notes')]
+    /**
+    
+     */
+    #[ORM\ManyToOne(targetEntity: Category::class, inversedBy: 'notes')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Category $category = null;
 
@@ -52,12 +52,28 @@ class Note
     #[ORM\JoinColumn(nullable: false)]
     private ?User $creator = null;
 
+    /**
+     * @var Collection<int, Like>
+     */
+    #[ORM\OneToMany(targetEntity: Like::class, mappedBy: 'note')]
+    private Collection $likes;
+
+    #[ORM\Column(length: 255)]
+    private ?string $slug = null;
+
+    /**
+     * @var Collection<int, View>
+     */
+    #[ORM\OneToMany(targetEntity: View::class, mappedBy: 'note', orphanRemoval: true)]
+    private Collection $views;
+
     public function __construct()
     {
-        $this->notifications = new ArrayCollection(); // initialisation du tableau de notifications
-        $this->is_public = false; // initialisation du booléen à false
-        $this->title = uniqid('note-'); // initialisation du titre au GUID
-        $this->views = 0; // initialisation du compteur de vues
+        $this->title = uniqid('note-'); //GUID of title initialization
+        $this->is_public = false; //boolean initialization 
+        $this->notifications = new ArrayCollection();
+        $this->likes = new ArrayCollection();
+        //$this->views = 0; // initialisation du compteur de vues
     }
 
     #[ORM\PrePersist]
@@ -90,17 +106,9 @@ class Note
         return $this;
     }
 
-    public function getSlug(): ?string
-    {
-        return $this->slug;
-    }
 
-    public function setSlug(string $slug): static
-    {
-        $this->slug = $slug;
 
-        return $this;
-    }
+
 
     public function getContent(): ?string
     {
@@ -119,24 +127,13 @@ class Note
         return $this->is_public;
     }
 
-    public function setPublic(bool $is_public): static
-    {
-        $this->is_public = $is_public;
+    public function setIsPublic(bool $is_public): static
+{
+    $this->is_public = $is_public;
 
-        return $this;
-    }
+    return $this;
+}
 
-    public function getViews(): ?string
-    {
-        return $this->views;
-    }
-
-    public function setViews(string $views): static
-    {
-        $this->views = $views;
-
-        return $this;
-    }
 
     public function getCreatedAt(): ?\DateTimeImmutable
     {
@@ -192,17 +189,23 @@ class Note
         return $this;
     }
 
-    public function getCategory(): ?Category
-    {
-        return $this->category;
-    }
+    /**
+     * @return Collection<int, Category>
+     */
 
-    public function setCategory(?Category $category): static
+     public function getCategory(): ?Category
+     {
+         return $this->category;
+     }
+
+ 
+
+    public function setCategory(?Category $category): self
     {
         $this->category = $category;
-
         return $this;
     }
+
 
     public function getCreator(): ?User
     {
@@ -212,6 +215,79 @@ class Note
     public function setCreator(?User $creator): static
     {
         $this->creator = $creator;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Like>
+     */
+    public function getLikes(): Collection
+    {
+        return $this->likes;
+    }
+
+    public function addLike(Like $like): static
+    {
+        if (!$this->likes->contains($like)) {
+            $this->likes->add($like);
+            $like->setNote($this);
+        }
+
+        return $this;
+    }
+
+    public function removeLike(Like $like): static
+    {
+        if ($this->likes->removeElement($like)) {
+            // set the owning side to null (unless already changed)
+            if ($like->getNote() === $this) {
+                $like->setNote(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function getSlug(): ?string
+    {
+        return $this->slug;
+    }
+
+    public function setSlug(string $slug): static
+    {
+
+        $this->slug = $slug;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, View>
+     */
+    public function getViews(): Collection
+    {
+        return $this->views;
+    }
+
+    public function addView(View $view): static
+    {
+        if (!$this->views->contains($view)) {
+            $this->views->add($view);
+            $view->setNote($this);
+        }
+
+        return $this;
+    }
+
+    public function removeView(View $view): static
+    {
+        if ($this->views->removeElement($view)) {
+            // set the owning side to null (unless already changed)
+            if ($view->getNote() === $this) {
+                $view->setNote(null);
+            }
+        }
 
         return $this;
     }

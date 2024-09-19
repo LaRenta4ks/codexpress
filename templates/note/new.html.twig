@@ -5,7 +5,14 @@
 {% endblock %}
 
 {% block body %}
-    {% if app.user is defined %}
-    {{ form(noteForm) }}
+{% if app.user %}
+    {# {{ include('components/access-denied.html.twig') }} #}
+    {% if app.user.email|length > 18 %}
+        {{ form(noteForm) }}
     {% endif %}
+{% else %}
+    {# {{ include('components/access-denied.html.twig') }} #}
+    <!-- JE SUIS LÀ -->
+    Access denied
+{% endif %}
 {% endblock %}
